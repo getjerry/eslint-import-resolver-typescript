@@ -18,7 +18,7 @@ use std::fs::File;
 use std::path::{Component as PathComponent, Path, PathBuf};
 use std::{fmt, fs, io};
 use substring::Substring;
-
+use cached::proc_macro::cached;
 /// An Error, returned when the module could not be resolved.
 #[derive(Debug)]
 pub struct ResolutionError {
@@ -370,7 +370,6 @@ impl Resolver {
     }
   }
 }
-
 fn normalize_path(p: &Path) -> PathBuf {
   let mut normalized = PathBuf::from("/");
   for part in p.components() {
@@ -446,6 +445,7 @@ pub fn resolve_from(target: &str, basedir: PathBuf) -> Result<PathBuf, Resolutio
 }
 
 // Is source path match the tsConfig pattern
+#[cached]
 pub fn match_star(pattern: String, search: String) -> Result<String, String> {
   if search.len() < pattern.len() {
     return Err(String::from(""));

@@ -3,6 +3,7 @@
 use std::path::Path;
 use substring::Substring;
 use tsconfig::{CompilerOptions, TsConfig};
+use cached::proc_macro::{cached, once};
 
 mod node_resolve;
 use std::{env::current_dir, path::PathBuf};
@@ -19,6 +20,7 @@ fn remove_query_string(id: String) -> String {
 }
 
 // Read tsConfig paths
+#[cached]
 fn get_ts_config_path(ts_config_file: String) -> PathBuf {
   if ts_config_file.starts_with('/') {
     if ts_config_file.ends_with(".json") {
@@ -33,6 +35,7 @@ fn get_ts_config_path(ts_config_file: String) -> PathBuf {
   }
 }
 
+#[once(time=10, sync_writes = true)]
 fn get_ts_config(ts_config_file: String) -> Result<TsConfig, String> {
   // Read tsConfig paths
   let tsconfig_path = get_ts_config_path(ts_config_file);
@@ -48,6 +51,7 @@ fn get_ts_config(ts_config_file: String) -> Result<TsConfig, String> {
 // 1. if no tsconfig file found. return current work dir
 // 2. if no baseUrl listed in tsconfig. return the tsconfig file directory
 // 3. if baseUrl is present. join baseUrl with tsconfig file directory as base dir
+#[cached]
 fn get_base_dir(ts_config_file: String) -> PathBuf {
   let ts_config = get_ts_config(ts_config_file.clone());
 
@@ -141,8 +145,6 @@ pub fn resolve(source_input: String, file: String, ts_config_file: String) -> Re
   resolved = resolver
     .with_basedir(base_dir.to_path_buf())
     .resolve(format!("@types/{}", source.as_str()).as_str());
-
-  println!("try types {}", resolved.is_ok());
 
   if resolved.is_ok() {
     return ResolveResult {
