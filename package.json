@@ -1,5 +1,5 @@
 {
-  "name": "eslint-import-resolver-typescript",
+  "name": "@getjerry/eslint-import-resolver-typescript",
   "version": "0.0.0",
   "main": "index.js",
   "types": "index.d.ts",
