@@ -9,42 +9,6 @@ use std::{env::current_dir, path::PathBuf};
 
 #[macro_use]
 extern crate napi_derive;
-
-// Is source path match the tsConfig pattern
-fn match_star(pattern: String, search: String) -> Result<String, String> {
-  if search.len() < pattern.len() {
-    return Err(String::from(""));
-  }
-
-  if pattern == "*" {
-    return Ok(search);
-  }
-
-  if search == pattern {
-    return Ok(String::from(""));
-  }
-
-  let star_index = pattern.find("*");
-  if star_index.is_none() {
-    return Err(String::from(""));
-  }
-
-  let part1 = pattern.substring(0, star_index.unwrap());
-  let part2 = pattern.substring(star_index.unwrap() + 1, pattern.len());
-
-  if search.substring(0, star_index.unwrap()) != part1 {
-    return Err(String::from(""));
-  }
-
-  if search.substring(search.len() - part2.len(), search.len()) != part2 {
-    return Err(String::from(""));
-  }
-
-  Ok(String::from(
-    search.substring(star_index.unwrap(), search.len() - part2.len()),
-  ))
-}
-
 /** Remove any trailing querystring from module id. */
 fn remove_query_string(id: String) -> String {
   let query_string_index = id.find('?');
@@ -178,7 +142,7 @@ pub fn resolve(source_input: String, file: String, ts_config_file: String) -> Re
     .with_basedir(base_dir.to_path_buf())
     .resolve(format!("@types/{}", source.as_str()).as_str());
 
-  print!("try types {}", resolved.is_ok());
+  println!("try types {}", resolved.is_ok());
 
   if resolved.is_ok() {
     return ResolveResult {
@@ -201,7 +165,7 @@ pub fn resolve(source_input: String, file: String, ts_config_file: String) -> Re
 
   // Iter paths to do full path match
   for (path_pattern, dest_paths) in paths_map.unwrap() {
-    let star_match = match_star(path_pattern.clone(), source.clone());
+    let star_match = node_resolve::match_star(path_pattern.clone(), source.clone());
 
     if star_match.is_err() {
       continue;

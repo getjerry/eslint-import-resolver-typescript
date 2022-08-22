@@ -18,3 +18,4 @@ import 'unist'
 
 // exports
 import '@mozilla/glean/webext'
+import '@mozilla/glean/private/metrics/counter'

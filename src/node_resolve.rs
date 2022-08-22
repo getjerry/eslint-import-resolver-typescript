@@ -17,6 +17,7 @@ use std::error::Error;
 use std::fs::File;
 use std::path::{Component as PathComponent, Path, PathBuf};
 use std::{fmt, fs, io};
+use substring::Substring;
 
 /// An Error, returned when the module could not be resolved.
 #[derive(Debug)]
@@ -166,7 +167,6 @@ impl Resolver {
       self.get_basedir()?
     };
 
-
     // 4. Try local files
     let path = basedir.as_path().join(target);
     let resolved = self
@@ -260,6 +260,78 @@ impl Resolver {
     }
   }
 
+  // Resolve using package.json "exports" key https://nodejs.org/api/packages.html#exports
+  fn resolve_package_exports(
+    &self,
+    target: &str,
+    pkg_dir: &PathBuf,
+    recurse_target: &str,
+  ) -> Result<PathBuf, ResolutionError> {
+    let pkg_path = pkg_dir.join("package.json");
+    if !pkg_path.is_file() {
+      if recurse_target.clone().contains("/") {
+        let parent_target = PathBuf::from(String::from(recurse_target));
+        // println!("try recurse resolve {}", parent_target.clone().parent().unwrap().to_str().unwrap());
+        return self.resolve_package_exports(
+          target,
+          &pkg_dir.parent().unwrap().to_path_buf(),
+          parent_target.clone().parent().unwrap().to_str().unwrap(),
+        );
+      }
+    }
+
+    let file = File::open(pkg_path)?;
+    let pkg: Value = serde_json::from_reader(file)?;
+    if !pkg.is_object() {
+      return Err(ResolutionError::new("package.json is not an object"));
+    }
+
+    // Handle string as exports value
+    if pkg["exports"].is_string() {
+      let path = pkg_dir.join(pkg["exports"].as_str().unwrap());
+      return self.resolve_as_file(&path);
+    }
+
+    // Handle string array as exports value
+    if pkg["exports"].is_array() {
+      for entry in pkg["exports"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|v| v.as_str())
+      {
+        let path = pkg_dir.join(entry);
+        return self.resolve_as_file(&path);
+      }
+    }
+
+    // Handle path map as exports value
+    if pkg["exports"].is_object() {
+      let entries = pkg["exports"].clone().as_object().unwrap().clone();
+      for (path_pattern, dest_path) in entries {
+        let search_source = Path::new(target).strip_prefix(recurse_target);
+        if search_source.is_err() {
+          continue;
+        }
+
+        let star_match = match_star(
+          String::from(path_pattern.strip_prefix("./").unwrap()),
+          String::from(search_source.clone().unwrap().to_str().unwrap()),
+        );
+        if star_match.is_ok() {
+          let physical_path = dest_path
+            .as_str()
+            .unwrap()
+            .replace("*", star_match.clone().unwrap().as_str());
+          let path = pkg_dir.join(physical_path);
+          return self.resolve_as_file(&path);
+        }
+      }
+    }
+
+    Err(ResolutionError::new("package.json exports not found"))
+  }
+
   /// Resolve a directory to its index.EXT.
   fn resolve_index(&self, path: &PathBuf) -> Result<PathBuf, ResolutionError> {
     // 1. If X/index.js is a file, load X/index.js as JavaScript text.
@@ -283,7 +355,8 @@ impl Resolver {
       let path = node_modules.join(target);
       let result = self
         .resolve_as_file(&path)
-        .or_else(|_| self.resolve_as_directory(&path));
+        .or_else(|_| self.resolve_as_directory(&path))
+        .or_else(|_| self.resolve_package_exports(target, &path, target.clone()));
       if result.is_ok() {
         return result;
       }
@@ -372,11 +445,46 @@ pub fn resolve_from(target: &str, basedir: PathBuf) -> Result<PathBuf, Resolutio
   Resolver::new().with_basedir(basedir).resolve(target)
 }
 
+// Is source path match the tsConfig pattern
+pub fn match_star(pattern: String, search: String) -> Result<String, String> {
+  if search.len() < pattern.len() {
+    return Err(String::from(""));
+  }
+
+  if pattern == "*" {
+    return Ok(search);
+  }
+
+  if search == pattern {
+    return Ok(String::from(""));
+  }
+
+  let star_index = pattern.find("*");
+  if star_index.is_none() {
+    return Err(String::from(""));
+  }
+
+  let part1 = pattern.substring(0, star_index.unwrap());
+  let part2 = pattern.substring(star_index.unwrap() + 1, pattern.len());
+
+  if search.substring(0, star_index.unwrap()) != part1 {
+    return Err(String::from(""));
+  }
+
+  if search.substring(search.len() - part2.len(), search.len()) != part2 {
+    return Err(String::from(""));
+  }
+
+  Ok(String::from(
+    search.substring(star_index.unwrap(), search.len() - part2.len()),
+  ))
+}
+
 #[cfg(test)]
 mod tests {
+  use super::*;
   use std::env;
   use std::path::PathBuf;
-  use super::*;
 
   fn fixture(part: &str) -> PathBuf {
     env::current_dir().unwrap().join("fixtures").join(part)
