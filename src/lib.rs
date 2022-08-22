@@ -1,9 +1,10 @@
 #![deny(clippy::all)]
 
 use cached::proc_macro::{cached, once};
+use glob::glob;
 use std::path::Path;
 use substring::Substring;
-use tsconfig::{TsConfig};
+use tsconfig::TsConfig;
 
 mod node_resolve;
 use std::{env::current_dir, path::PathBuf};
@@ -96,19 +97,15 @@ pub struct Options {
   pub project: Option<Vec<String>>,
 }
 
-// TODO: Implement package export syntax
-#[napi]
-pub fn resolve(source_input: String, file: String, options: Options) -> ResolveResult {
+// Resolve on single tsConfig project
+pub fn resolve_single_project(
+  source_input: String,
+  file: String,
+  ts_config_file: String,
+) -> ResolveResult {
   // Remove query string
   let source = remove_query_string(source_input);
 
-  let ts_config_file = options
-    .project
-    .and_then(|v| match v.get(0) {
-      Some(path) => Some(path.clone()),
-      None => Some(String::from("tsconfig.json")),
-    })
-    .unwrap();
   let base_dir = get_base_dir(ts_config_file.clone());
 
   // Start resolve normal paths
@@ -213,4 +210,29 @@ pub fn resolve(source_input: String, file: String, options: Options) -> ResolveR
     found: false,
     path: String::from(""),
   }
+}
+
+// TODO: Implement package export syntax
+#[napi]
+pub fn resolve(source_input: String, file: String, options: Options) -> ResolveResult {
+  for ts_config_file in options.project.clone().unwrap().iter() {
+    for entry in glob(ts_config_file.clone().as_str())
+      .unwrap()
+      .filter_map(|p| p.ok())
+    {
+      let resolved = resolve_single_project(
+        source_input.clone(),
+        file.clone(),
+        String::from(entry.to_str().unwrap()),
+      );
+      if resolved.found {
+        return resolved;
+      }
+    }
+  }
+  resolve_single_project(
+    source_input.clone(),
+    file.clone(),
+    String::from("tsconfig.json"),
+  )
 }
