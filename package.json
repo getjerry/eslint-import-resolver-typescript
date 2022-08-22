@@ -50,6 +50,7 @@
     "build:debug": "napi build --platform --js entry.js",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
+    "watch": "fswatch -o -r ./src | xargs -I {} yarn build",
     "version": "napi version",
     "test-lint": "run-p test:*",
     "test:multipleEslintrcs": "eslint --ext ts,tsx fixtures/multipleEslintrcs",

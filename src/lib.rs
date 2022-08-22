@@ -54,20 +54,9 @@ fn remove_query_string(id: String) -> String {
   return id;
 }
 
-#[napi_derive::napi(object)]
-pub struct ResolveResult {
-  pub found: bool,
-  pub path: String,
-}
-
-#[napi]
-pub fn resolve(source_input: String, file: String, ts_config_file: String) -> ResolveResult {
-
-  // Remove query string
-  let source = remove_query_string(source_input);
-  
-  // Read tsConfig paths
-  let tsconfig_path = if ts_config_file.starts_with('/') {
+// Read tsConfig paths
+fn get_ts_config_path(ts_config_file: String) -> PathBuf {
+  if ts_config_file.starts_with('/') {
     if ts_config_file.ends_with(".json") {
       Path::new(ts_config_file.as_str()).to_path_buf()
     } else {
@@ -77,19 +66,65 @@ pub fn resolve(source_input: String, file: String, ts_config_file: String) -> Re
     }
   } else {
     Path::new(current_dir().unwrap().to_str().unwrap()).join(ts_config_file)
-  };
+  }
+}
 
-  let config = TsConfig::parse_file(&tsconfig_path).unwrap();
+fn get_ts_config(ts_config_file: String) -> Result<TsConfig, String> {
+  // Read tsConfig paths
+  let tsconfig_path = get_ts_config_path(ts_config_file);
 
-  // Get base dir for tsconfig
-  // let base_url = config
-  //   .compiler_options
-  //   .and_then(|o| o.base_url.and_then(|base_url| Some(base_url)))
-  //   .unwrap_or(String::from("."))
-  //   .clone();
-  // let base_url_str = base_url.as_str();
-  // TODO: implement base url
-  let base_dir = tsconfig_path.parent().unwrap().to_path_buf();
+  let config = TsConfig::parse_file(&tsconfig_path);
+  if config.is_ok() {
+    return Ok(config.unwrap());
+  }
+  Err(String::from("No tsConfig file found"))
+}
+
+// Get base dir to search for
+// 1. if no tsconfig file found. return current work dir
+// 2. if no baseUrl listed in tsconfig. return the tsconfig file directory
+// 3. if baseUrl is present. join baseUrl with tsconfig file directory as base dir
+fn get_base_dir(ts_config_file: String) -> PathBuf {
+  let ts_config = get_ts_config(ts_config_file.clone());
+
+  // if no config file found
+  if ts_config.is_err() {
+    return current_dir().ok().unwrap();
+  }
+
+  let compiler_options = ts_config.clone().unwrap().to_owned().compiler_options.clone();
+
+  let ts_config_dir = get_ts_config_path(ts_config_file.clone())
+    .parent()
+    .unwrap()
+    .to_path_buf();
+  // use tsconfig file path as base dir when no baseDir or no compiler options
+  if compiler_options.clone().is_none()
+    || compiler_options.clone()
+      .and_then(|options| options.base_url)
+      .is_none()
+  {
+    return ts_config_dir;
+  }
+
+  let base_url = compiler_options.unwrap().base_url.unwrap();
+  ts_config_dir.join(base_url)
+}
+
+#[napi_derive::napi(object)]
+pub struct ResolveResult {
+  pub found: bool,
+  pub path: String,
+}
+
+// TODO: Implement package export syntax
+#[napi]
+pub fn resolve(source_input: String, file: String, ts_config_file: String) -> ResolveResult {
+  // Remove query string
+  let source = remove_query_string(source_input);
+
+  // let base_dir = tsconfig_path.parent().unwrap().to_path_buf();
+  let base_dir = get_base_dir(ts_config_file.clone());
 
   // Start resolve normal paths
   let resolver = node_resolve::Resolver::new()
@@ -152,7 +187,10 @@ pub fn resolve(source_input: String, file: String, ts_config_file: String) -> Re
     };
   }
 
-  let paths_map = config.compiler_options.clone().unwrap().paths;
+  let paths_map = get_ts_config(ts_config_file.clone().to_string())
+    .ok()
+    .and_then(|config| config.compiler_options)
+    .and_then(|option| option.paths);
 
   if paths_map.is_none() {
     return ResolveResult {
