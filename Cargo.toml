@@ -1,0 +1,21 @@
+[package]
+edition = "2021"
+name = "eslint-import-resolver-typescript"
+version = "0.0.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+napi = { version = "2.7.0", default-features = false, features = ["napi4"] }
+napi-derive = "2.7.0"
+serde_json = "1.0.83"
+substring = "1.4.5"
+tsconfig = "0.1.0"
+
+[build-dependencies]
+napi-build = "2.0.1"
+
+[profile.release]
+lto = true

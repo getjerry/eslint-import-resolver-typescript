@@ -1,0 +1,14 @@
+{
+  "root": true,
+  "env": {
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "extends": [
+    "plugin:jsonc/recommended-with-json",
+    "plugin:json-schema-validator/recommended",
+    "plugin:mdx/recommended"
+  ]
+}

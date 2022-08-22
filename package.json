@@ -1,0 +1,86 @@
+{
+  "name": "eslint-import-resolver-typescript",
+  "version": "0.0.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "eslint-import-resolver-typescript",
+    "triples": {
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl",
+        "aarch64-pc-windows-msvc",
+        "armv7-unknown-linux-gnueabihf",
+        "x86_64-unknown-linux-musl",
+        "x86_64-unknown-freebsd",
+        "i686-pc-windows-msvc",
+        "armv7-linux-androideabi"
+      ]
+    }
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@mozilla/glean": "^1.1.0",
+    "@napi-rs/cli": "^2.11.4",
+    "@types/node": "^16.11.52",
+    "@types/unist": "^2.0.6",
+    "@typescript-eslint/eslint-plugin": "^5.33.1",
+    "@typescript-eslint/parser": "^5.33.1",
+    "ava": "^4.3.0",
+    "dummy.js": "link:dummy.js",
+    "eslint": "^8.22.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-json-schema-validator": "^4.0.1",
+    "eslint-plugin-jsonc": "^2.4.0",
+    "eslint-plugin-mdx": "^2.0.2",
+    "eslint-plugin-prettier": "^4.2.1",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.7.1",
+    "typescript": "^4.7.4"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release --js entry.js",
+    "build:debug": "napi build --platform --js entry.js",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "ava",
+    "version": "napi version",
+    "test-lint": "run-p test:*",
+    "test:multipleEslintrcs": "eslint --ext ts,tsx fixtures/multipleEslintrcs",
+    "test:multipleTsconfigs": "eslint --ext ts,tsx fixtures/multipleTsconfigs",
+    "test:withJsconfig": "eslint --ext js fixtures/withJsconfig",
+    "test:withPaths": "eslint --ext ts,tsx fixtures/withPaths",
+    "test:withPathsAndNestedBaseUrl": "eslint --ext ts,tsx fixtures/withPathsAndNestedBaseUrl",
+    "test:withQuerystring": "eslint --ext ts,tsx fixtures/withQuerystring",
+    "test:withoutPaths": "eslint --ext ts,tsx fixtures/withoutPaths"
+  },
+  "description": "Rust version of eslint-import-resolver-typescript",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getjerry/eslint-import-resolver-typescript.git"
+  },
+  "author": "eslintplugin",
+  "bugs": {
+    "url": "https://github.com/getjerry/eslint-import-resolver-typescript/issues"
+  },
+  "homepage": "https://github.com/getjerry/eslint-import-resolver-typescript#readme",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "@napi-rs/cli": "^2.11.4",
+    "@types/node": "^16.11.52",
+    "ava": "^4.3.0",
+    "eslint-import-resolver-typescript": "link:."
+  },
+  "keywords": [
+    "eslint",
+    "eslintplugin"
+  ]
+}
