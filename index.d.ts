@@ -7,4 +7,7 @@ export interface ResolveResult {
   found: boolean
   path: string
 }
-export function resolve(sourceInput: string, file: string, tsConfigFile: string): ResolveResult
+export interface Options {
+  project?: Array<string>
+}
+export function resolve(sourceInput: string, file: string, options: Options): ResolveResult

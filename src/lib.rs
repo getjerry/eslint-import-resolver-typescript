@@ -1,9 +1,9 @@
 #![deny(clippy::all)]
 
+use cached::proc_macro::{cached, once};
 use std::path::Path;
 use substring::Substring;
-use tsconfig::{CompilerOptions, TsConfig};
-use cached::proc_macro::{cached, once};
+use tsconfig::{TsConfig};
 
 mod node_resolve;
 use std::{env::current_dir, path::PathBuf};
@@ -35,7 +35,7 @@ fn get_ts_config_path(ts_config_file: String) -> PathBuf {
   }
 }
 
-#[once(time=10, sync_writes = true)]
+#[once(time = 10, sync_writes = true)]
 fn get_ts_config(ts_config_file: String) -> Result<TsConfig, String> {
   // Read tsConfig paths
   let tsconfig_path = get_ts_config_path(ts_config_file);
@@ -60,7 +60,12 @@ fn get_base_dir(ts_config_file: String) -> PathBuf {
     return current_dir().ok().unwrap();
   }
 
-  let compiler_options = ts_config.clone().unwrap().to_owned().compiler_options.clone();
+  let compiler_options = ts_config
+    .clone()
+    .unwrap()
+    .to_owned()
+    .compiler_options
+    .clone();
 
   let ts_config_dir = get_ts_config_path(ts_config_file.clone())
     .parent()
@@ -68,7 +73,8 @@ fn get_base_dir(ts_config_file: String) -> PathBuf {
     .to_path_buf();
   // use tsconfig file path as base dir when no baseDir or no compiler options
   if compiler_options.clone().is_none()
-    || compiler_options.clone()
+    || compiler_options
+      .clone()
       .and_then(|options| options.base_url)
       .is_none()
   {
@@ -85,13 +91,24 @@ pub struct ResolveResult {
   pub path: String,
 }
 
+#[napi(object)]
+pub struct Options {
+  pub project: Option<Vec<String>>,
+}
+
 // TODO: Implement package export syntax
 #[napi]
-pub fn resolve(source_input: String, file: String, ts_config_file: String) -> ResolveResult {
+pub fn resolve(source_input: String, file: String, options: Options) -> ResolveResult {
   // Remove query string
   let source = remove_query_string(source_input);
 
-  // let base_dir = tsconfig_path.parent().unwrap().to_path_buf();
+  let ts_config_file = options
+    .project
+    .and_then(|v| match v.get(0) {
+      Some(path) => Some(path.clone()),
+      None => Some(String::from("tsconfig.json")),
+    })
+    .unwrap();
   let base_dir = get_base_dir(ts_config_file.clone());
 
   // Start resolve normal paths
