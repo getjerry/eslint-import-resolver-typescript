@@ -1,6 +1,6 @@
 import test from 'ava';
 import path from 'path';
-import {fileURLToPath} from 'url';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -30,8 +30,11 @@ test('resolve buildins with wrong tsconfig', (t) => {
 });
 
 test('resolve relative path with tsconfig', (t) => {
-  t.deepEqual(resolve('./tsImportee', __dirname + '/../fixtures/withoutPaths/index.ts', { project: ['tsconfig.json'] }), {
-    found: true,
-    path: path.resolve(__dirname + '/../fixtures/withoutPaths/tsImportee.ts')
-  });
+  t.deepEqual(
+    resolve('./tsImportee', path.join(__dirname, '../fixtures/withoutPaths/index.ts'), { project: ['tsconfig.json'] }),
+    {
+      found: true,
+      path: path.resolve(path.join(__dirname, '../fixtures/withoutPaths/tsImportee.ts')),
+    },
+  );
 });
