@@ -4,7 +4,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
-    "name": "eslint-import-resolver-typescript",
+    "name": "@getjerryeslint-import-resolver-typescript",
     "triples": {
       "additional": [
         "aarch64-apple-darwin",
@@ -52,7 +52,7 @@
     "test": "run-p test:*",
     "watch": "fswatch -o -r ./src | xargs -I {} yarn build",
     "version": "napi version",
-    "test:unit": "ava",
+    "test:unit": "ava --timeout=5m",
     "test:multipleEslintrcs": "eslint --ext ts,tsx fixtures/multipleEslintrcs",
     "test:multipleTsconfigs": "eslint --ext ts,tsx fixtures/multipleTsconfigs",
     "test:withJsconfig": "eslint --ext js fixtures/withJsconfig",
@@ -83,5 +83,20 @@
   "keywords": [
     "eslint",
     "eslintplugin"
-  ]
+  ],
+  "optionalDependencies": {
+    "@getjerry/eslint-import-resolver-typescript-win32-x64-msvc": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-darwin-x64": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-linux-x64-gnu": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-darwin-arm64": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-android-arm64": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-linux-arm64-gnu": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-linux-arm64-musl": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-win32-arm64-msvc": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-linux-arm-gnueabihf": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-linux-x64-musl": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-freebsd-x64": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-win32-ia32-msvc": "0.0.0",
+    "@getjerry/eslint-import-resolver-typescript-android-arm-eabi": "0.0.0"
+  }
 }
