@@ -30,8 +30,10 @@ test('resolve buildins with wrong tsconfig', (t) => {
 });
 
 test('resolve relative path with tsconfig', (t) => {
+  console.log('__dirname', __dirname);
+  console.log(path.join(__dirname, '../fixtures/withoutPaths/index.ts'));
   t.deepEqual(
-    resolve('./tsImportee', path.join(__dirname, '../fixtures/withoutPaths/index.ts'), { project: ['tsconfig.json'] }),
+    resolve('./tsImportee', path.join(__dirname, '../fixtures/withoutPaths/index.ts'), { project: [path.join(__dirname, '../tsconfig.json')] }),
     {
       found: true,
       path: path.resolve(path.join(__dirname, '../fixtures/withoutPaths/tsImportee.ts')),
