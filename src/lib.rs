@@ -216,7 +216,18 @@ pub fn resolve_single_project(
 #[napi]
 pub fn resolve(source_input: String, file: String, options: Options) -> ResolveResult {
   for ts_config_file in options.project.clone().unwrap().iter() {
-    for entry in glob(ts_config_file.clone().as_str())
+    let physical_ts_config_path = if ts_config_file.starts_with("/") {
+      ts_config_file.clone()
+    } else {
+      String::from(
+        current_dir()
+          .unwrap()
+          .join(ts_config_file)
+          .to_str()
+          .unwrap(),
+      )
+    };
+    for entry in glob(physical_ts_config_path.clone().as_str())
       .unwrap()
       .filter_map(|p| p.ok())
     {

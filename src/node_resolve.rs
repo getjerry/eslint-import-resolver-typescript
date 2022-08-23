@@ -154,7 +154,7 @@ impl Resolver {
     // 1. If X is a core module
     if is_core_module(target) {
       // 1.a. Return the core module
-      return Ok(PathBuf::from(target));
+      return Ok(PathBuf::from(""));
     }
 
     // TODO how to not always initialise this here?
